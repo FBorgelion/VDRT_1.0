@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace Domain
+namespace Domain.Entities
 {
     public class InvoiceLine
     {
@@ -17,7 +17,7 @@ namespace Domain
 
 
         //Navigation properties
-        public Vehicle Vehicle { get; set; } = null!;
-        public Driver Driver { get; set; } = null!;
+        public Invoice Invoice { get; set; } = null!;
+        public Activity? Activity { get; set; }
     }
 }

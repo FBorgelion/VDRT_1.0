@@ -2,7 +2,7 @@
   <Project Path="BL/BL.csproj" />
   <Project Path="DAL/DAL.csproj" />
   <Project Path="Domain/Domain.csproj" />
-  <Project Path="VDRT_Dev/VDRT_Dev_Bakend.csproj" />
+  <Project Path="VDRT_Dev/VDRT_Dev_Backend.csproj" />
   <Project Path="VDRT_Dev_Front/VDRT_Dev_Front.Client/VDRT_Dev_Front.Client.csproj" />
   <Project Path="VDRT_Dev_Front/VDRT_Dev_Front/VDRT_Dev_Front.csproj" />
 </Solution>

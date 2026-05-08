@@ -1,10 +1,10 @@
-﻿using Domain;
+﻿using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace DAL
+namespace DAL.Data
 {
     public class AppDbContext : DbContext
     {
@@ -32,7 +32,17 @@ namespace DAL
         {
             base.OnModelCreating(modelBuilder);
 
-            
+            modelBuilder.Entity<Activity>()
+                .HasOne(a => a.TripAnomaly)
+                .WithOne(ta => ta.Activity)
+                .HasForeignKey<TripAnomaly>(ta => ta.Activity_Id)
+                .IsRequired(false);
+
+            modelBuilder.Entity<Activity>()
+                .HasOne(a => a.InvoiceLine)
+                .WithOne(il => il.Activity)
+                .HasForeignKey<InvoiceLine>(il => il.Activity_Id)
+                .IsRequired(false);
         }
 
 
