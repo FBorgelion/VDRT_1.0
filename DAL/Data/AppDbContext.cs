@@ -32,6 +32,24 @@ namespace DAL.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<Mission>()
+                .HasOne(m => m.Driver)
+                .WithMany(d => d.Missions)
+                .HasForeignKey(m => m.DriverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Mission>()
+                .HasOne(m => m.Vehicle)
+                .WithMany(v => v.Missions)
+                .HasForeignKey(m => m.VehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Mission>()
+                .HasOne(m => m.Site)
+                .WithMany(s => s.Missions)
+                .HasForeignKey(m => m.SiteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<Activity>()
                 .HasOne(a => a.TripAnomaly)
                 .WithOne(ta => ta.Activity)

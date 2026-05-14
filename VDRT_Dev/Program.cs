@@ -46,6 +46,15 @@ builder.Services.AddDbContext<AppDbContext>(
 builder.Services.AddScoped<IDriverRepo, DriverRepo>();
 builder.Services.AddScoped<IDriverService, DriverService>();
 
+builder.Services.AddScoped<IVehicleRepo, VehicleRepo>();
+builder.Services.AddScoped<IVehicleService, VehicleService>();
+
+builder.Services.AddScoped<IMissionRepo, MissionRepo>();
+builder.Services.AddScoped<IMissionService, MissionService>();
+
+builder.Services.AddScoped<ISiteRepo, SiteRepo>();
+builder.Services.AddScoped<ISiteService, SiteService>();
+
 builder.Services.AddAutoMapper(
     cfg => { },
     typeof(DriverProfile).Assembly
