@@ -8,7 +8,7 @@ namespace Domain.Entities
     {
 
         public int Id { get; set; }
-        public int Vehicle_Id { get; set; }
+        public int VehicleId { get; set; }
         public DateTime Timestamp { get; set; }
         public decimal Latitude { get; set; }
         public decimal Longitude { get; set; }

@@ -55,6 +55,27 @@ builder.Services.AddScoped<IMissionService, MissionService>();
 builder.Services.AddScoped<ISiteRepo, SiteRepo>();
 builder.Services.AddScoped<ISiteService, SiteService>();
 
+builder.Services.AddScoped<IVehicleAlertRepo, VehicleAlertRepo>();
+builder.Services.AddScoped<IVehicleAlertService, VehicleAlertService>();
+
+builder.Services.AddScoped<ITimesheetRepo, TimesheetRepo>();
+builder.Services.AddScoped<ITimesheetService, TimesheetService>();
+
+builder.Services.AddScoped<ITripAnomalyRepo, TripAnomalyRepo>();
+builder.Services.AddScoped<ITripAnomalyService, TripAnomalyService>();
+
+builder.Services.AddScoped<IInvoiceRepo, InvoiceRepo>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
+builder.Services.AddScoped<IInvoiceLineRepo, InvoiceLineRepo>();
+builder.Services.AddScoped<IInvoiceLineService, InvoiceLineService>();
+
+builder.Services.AddScoped<IPositionRepo, PositionRepo>();
+builder.Services.AddScoped<IPositionService, PositionService>();
+
+builder.Services.AddScoped<IActivityRepo, ActivityRepo>();
+builder.Services.AddScoped<IActivityService, ActivityService>();
+
 builder.Services.AddAutoMapper(
     cfg => { },
     typeof(DriverProfile).Assembly
