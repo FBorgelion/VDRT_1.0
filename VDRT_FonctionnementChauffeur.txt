@@ -1,0 +1,25 @@
+Fonctionnement : 
+
+Le chauffeur entre dans le camion et encode son code d'identification dans le "Carcube". Code unique. Il doit insérer sa carte pour les données tachygraphe + encodage CMR. Le chauffeur démarre et on peut alors voir si le camion ralentit ou s'arrête.
+
+Si le camion s'arrête, le Carcube interroge via un menu déroulant :
+	--> charger : régie (pas besoin d'explications) ou normal (à préciser);
+	--> lavage
+	--> etc
+
+Si le chauffeur ne clique sur rien et redémarre, la cause de l'arrêt sera alors "inconnue" dans le fichier (il faudra alors vérifier).
+
+Il faut analyser certains éléments comme "nuitée" et voir si c'est justifié (durée + position ?).
+
+Il existe d'autres éléments : durée du plein, durée arrêt garage, panne, passage par le bureau, durée bascule (chargement/déchargement ?).
+
+Le chauffeur peut se mettre "en coupure". Parfois le chauffeur se met en coupure durant un chargement afin de pouvoir conduire plus longtemps (exemple : 15 minutes de chargement/30 minutes de coupure). Cette coupure est à déduire du total de la journée.
+
+Possibilité de modifier la durée ou d'insérer une ligne dans les activités de la journée : lavage 30 minutes, plein durée limitée.
+Si la durée est trop importante, le chauffeur doit pouvoir s'expliquer (secondaire?).
+
+À la fin d'une activité, soit on cloture en redémarrant, soit manuellement, soit en passant à une autre activité (plusieurs activités peuvent être complétées durant un même arrêt). 
+
+D'abord se concentrer sur la recherche des nuitées, des pleins, du passage au garage, des lavages, des pannes, des attentes (chargement/déchargement).
+
+Ensuite automatiser le listage des coûts.
