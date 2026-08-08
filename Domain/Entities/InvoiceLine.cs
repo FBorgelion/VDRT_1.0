@@ -9,8 +9,8 @@ namespace Domain.Entities
     {
 
         public int Id { get; set; }
-        public int Invoice_Id { get; set; }
-        public int Activity_Id { get; set; }
+        public int InvoiceId { get; set; }
+        public int ActivityId { get; set; }
         public decimal Hours { get; set; }
         public decimal Amount { get; set; }
 

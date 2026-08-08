@@ -22,7 +22,7 @@ namespace DAL.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Domain.Activity", b =>
+            modelBuilder.Entity("Domain.Entities.Activity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -33,17 +33,11 @@ namespace DAL.Migrations
                     b.Property<int>("ActivityTypeId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ActivityType_Id")
-                        .HasColumnType("int");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("DriverId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Driving_Id")
                         .HasColumnType("int");
 
                     b.Property<int>("Duration")
@@ -52,20 +46,14 @@ namespace DAL.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("MissionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Mission_Id")
+                    b.Property<int>("MissionId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("ValidatedAt")
+                    b.Property<DateTime?>("ValidatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("ValidatedBy")
-                        .HasColumnType("int");
 
                     b.Property<string>("ValidationStatus")
                         .IsRequired()
@@ -87,7 +75,7 @@ namespace DAL.Migrations
                     b.ToTable("Activities");
                 });
 
-            modelBuilder.Entity("Domain.ActivityType", b =>
+            modelBuilder.Entity("Domain.Entities.ActivityType", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -104,7 +92,7 @@ namespace DAL.Migrations
                     b.ToTable("ActivityTypes");
                 });
 
-            modelBuilder.Entity("Domain.Driver", b =>
+            modelBuilder.Entity("Domain.Entities.Driver", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -124,7 +112,6 @@ namespace DAL.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Matricule")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -132,7 +119,7 @@ namespace DAL.Migrations
                     b.ToTable("Drivers");
                 });
 
-            modelBuilder.Entity("Domain.Invoice", b =>
+            modelBuilder.Entity("Domain.Entities.Invoice", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -144,9 +131,6 @@ namespace DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("DriverId")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("InvoiceAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -157,7 +141,7 @@ namespace DAL.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Site_Id")
+                    b.Property<int>("SiteId")
                         .HasColumnType("int");
 
                     b.Property<int?>("SitesId")
@@ -166,23 +150,16 @@ namespace DAL.Migrations
                     b.Property<int?>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<int>("VehicleId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("DriverId");
 
                     b.HasIndex("SitesId");
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("VehicleId");
-
                     b.ToTable("Invoices");
                 });
 
-            modelBuilder.Entity("Domain.InvoiceLine", b =>
+            modelBuilder.Entity("Domain.Entities.InvoiceLine", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -190,7 +167,7 @@ namespace DAL.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Activity_Id")
+                    b.Property<int>("ActivityId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("Amount")
@@ -202,12 +179,9 @@ namespace DAL.Migrations
                     b.Property<int>("InvoiceId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Invoice_Id")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("Activity_Id")
+                    b.HasIndex("ActivityId")
                         .IsUnique();
 
                     b.HasIndex("InvoiceId");
@@ -215,7 +189,7 @@ namespace DAL.Migrations
                     b.ToTable("InvoiceLines");
                 });
 
-            modelBuilder.Entity("Domain.Mission", b =>
+            modelBuilder.Entity("Domain.Entities.Mission", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -229,22 +203,13 @@ namespace DAL.Migrations
                     b.Property<int>("DriverId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Driver_Id")
-                        .HasColumnType("int");
-
                     b.Property<int>("Duration")
                         .HasColumnType("int");
 
                     b.Property<int>("SiteId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Site_Id")
-                        .HasColumnType("int");
-
                     b.Property<int>("VehicleId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Vehicle_Id")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -258,7 +223,7 @@ namespace DAL.Migrations
                     b.ToTable("Missions");
                 });
 
-            modelBuilder.Entity("Domain.Position", b =>
+            modelBuilder.Entity("Domain.Entities.Position", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -281,9 +246,6 @@ namespace DAL.Migrations
                     b.Property<int>("VehicleId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Vehicle_Id")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("VehicleId");
@@ -291,7 +253,7 @@ namespace DAL.Migrations
                     b.ToTable("Positions");
                 });
 
-            modelBuilder.Entity("Domain.Sites", b =>
+            modelBuilder.Entity("Domain.Entities.Sites", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -321,7 +283,7 @@ namespace DAL.Migrations
                     b.ToTable("Sites");
                 });
 
-            modelBuilder.Entity("Domain.Timesheet", b =>
+            modelBuilder.Entity("Domain.Entities.Timesheet", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -332,16 +294,10 @@ namespace DAL.Migrations
                     b.Property<DateTime>("ApprovedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ApprovedBy")
-                        .HasColumnType("int");
-
                     b.Property<int?>("ApproverId")
                         .HasColumnType("int");
 
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Employee_Id")
+                    b.Property<int>("DriverId")
                         .HasColumnType("int");
 
                     b.Property<int>("Month")
@@ -356,6 +312,9 @@ namespace DAL.Migrations
                     b.Property<decimal>("TotalHours")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.Property<int>("Year")
                         .HasColumnType("int");
 
@@ -363,12 +322,14 @@ namespace DAL.Migrations
 
                     b.HasIndex("ApproverId");
 
-                    b.HasIndex("EmployeeId");
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Timesheets");
                 });
 
-            modelBuilder.Entity("Domain.TripAnomaly", b =>
+            modelBuilder.Entity("Domain.Entities.TripAnomaly", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -376,7 +337,7 @@ namespace DAL.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Activity_Id")
+                    b.Property<int>("ActivityId")
                         .HasColumnType("int");
 
                     b.Property<int>("ActualDuration")
@@ -385,20 +346,20 @@ namespace DAL.Migrations
                     b.Property<int>("DriverId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Driver_Id")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("DurationDiffPercentage")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("ExpectedDuration")
                         .HasColumnType("int");
 
-                    b.Property<int?>("MissionId")
+                    b.Property<int>("MissionId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Mission_Id")
-                        .HasColumnType("int");
+                    b.Property<string>("ReviewComments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ReviewedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int?>("ReviewerId")
                         .HasColumnType("int");
@@ -410,13 +371,9 @@ namespace DAL.Migrations
                     b.Property<int>("VehicleId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Vehicle_Id")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("Activity_Id")
-                        .IsUnique();
+                    b.HasIndex("ActivityId");
 
                     b.HasIndex("DriverId");
 
@@ -429,7 +386,7 @@ namespace DAL.Migrations
                     b.ToTable("TripAnomalies");
                 });
 
-            modelBuilder.Entity("Domain.User", b =>
+            modelBuilder.Entity("Domain.Entities.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -462,7 +419,7 @@ namespace DAL.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Domain.Vehicle", b =>
+            modelBuilder.Entity("Domain.Entities.Vehicle", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -481,7 +438,7 @@ namespace DAL.Migrations
                     b.ToTable("Vehicles");
                 });
 
-            modelBuilder.Entity("Domain.VehicleAlert", b =>
+            modelBuilder.Entity("Domain.Entities.VehicleAlert", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -512,9 +469,6 @@ namespace DAL.Migrations
                     b.Property<int>("VehicleId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Vehicle_Id")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AcknowledgerId");
@@ -526,27 +480,30 @@ namespace DAL.Migrations
                     b.ToTable("VehicleAlerts");
                 });
 
-            modelBuilder.Entity("Domain.Activity", b =>
+            modelBuilder.Entity("Domain.Entities.Activity", b =>
                 {
-                    b.HasOne("Domain.ActivityType", "ActivityType")
+                    b.HasOne("Domain.Entities.ActivityType", "ActivityType")
                         .WithMany("Activities")
                         .HasForeignKey("ActivityTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Driver", "Driver")
+                    b.HasOne("Domain.Entities.Driver", "Driver")
                         .WithMany("Activities")
                         .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Mission", "Mission")
+                    b.HasOne("Domain.Entities.Mission", "Mission")
                         .WithMany("Activities")
-                        .HasForeignKey("MissionId");
+                        .HasForeignKey("MissionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.HasOne("Domain.User", "Validator")
+                    b.HasOne("Domain.Entities.User", "Validator")
                         .WithMany("ValidatedActivities")
-                        .HasForeignKey("ValidatorId");
+                        .HasForeignKey("ValidatorId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("ActivityType");
 
@@ -557,41 +514,27 @@ namespace DAL.Migrations
                     b.Navigation("Validator");
                 });
 
-            modelBuilder.Entity("Domain.Invoice", b =>
+            modelBuilder.Entity("Domain.Entities.Invoice", b =>
                 {
-                    b.HasOne("Domain.Driver", "Driver")
-                        .WithMany()
-                        .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Sites", null)
+                    b.HasOne("Domain.Entities.Sites", null)
                         .WithMany("Invoices")
                         .HasForeignKey("SitesId");
 
-                    b.HasOne("Domain.User", null)
+                    b.HasOne("Domain.Entities.User", null)
                         .WithMany("CreatedInvoices")
                         .HasForeignKey("UserId");
-
-                    b.HasOne("Domain.Vehicle", "Vehicle")
-                        .WithMany()
-                        .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Driver");
-
-                    b.Navigation("Vehicle");
                 });
 
-            modelBuilder.Entity("Domain.InvoiceLine", b =>
+            modelBuilder.Entity("Domain.Entities.InvoiceLine", b =>
                 {
-                    b.HasOne("Domain.Activity", "Activity")
+                    b.HasOne("Domain.Entities.Activity", "Activity")
                         .WithOne("InvoiceLine")
-                        .HasForeignKey("Domain.InvoiceLine", "Activity_Id");
+                        .HasForeignKey("Domain.Entities.InvoiceLine", "ActivityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.HasOne("Domain.Invoice", "Invoice")
-                        .WithMany()
+                    b.HasOne("Domain.Entities.Invoice", "Invoice")
+                        .WithMany("InvoiceLines")
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -601,24 +544,24 @@ namespace DAL.Migrations
                     b.Navigation("Invoice");
                 });
 
-            modelBuilder.Entity("Domain.Mission", b =>
+            modelBuilder.Entity("Domain.Entities.Mission", b =>
                 {
-                    b.HasOne("Domain.Driver", "Driver")
+                    b.HasOne("Domain.Entities.Driver", "Driver")
                         .WithMany("Missions")
                         .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Sites", "Site")
+                    b.HasOne("Domain.Entities.Sites", "Site")
                         .WithMany("Missions")
                         .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Vehicle", "Vehicle")
+                    b.HasOne("Domain.Entities.Vehicle", "Vehicle")
                         .WithMany("Missions")
                         .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Driver");
@@ -628,58 +571,68 @@ namespace DAL.Migrations
                     b.Navigation("Vehicle");
                 });
 
-            modelBuilder.Entity("Domain.Position", b =>
+            modelBuilder.Entity("Domain.Entities.Position", b =>
                 {
-                    b.HasOne("Domain.Vehicle", "Vehicle")
+                    b.HasOne("Domain.Entities.Vehicle", "Vehicle")
                         .WithMany("Positions")
                         .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Vehicle");
                 });
 
-            modelBuilder.Entity("Domain.Timesheet", b =>
+            modelBuilder.Entity("Domain.Entities.Timesheet", b =>
                 {
-                    b.HasOne("Domain.User", "Approver")
-                        .WithMany("ApprovedTimesheets")
-                        .HasForeignKey("ApproverId");
+                    b.HasOne("Domain.Entities.User", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApproverId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Domain.Driver", "Employee")
+                    b.HasOne("Domain.Entities.Driver", "Driver")
                         .WithMany("Timesheets")
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Domain.Entities.User", null)
+                        .WithMany("ApprovedTimesheets")
+                        .HasForeignKey("UserId");
 
                     b.Navigation("Approver");
 
-                    b.Navigation("Employee");
+                    b.Navigation("Driver");
                 });
 
-            modelBuilder.Entity("Domain.TripAnomaly", b =>
+            modelBuilder.Entity("Domain.Entities.TripAnomaly", b =>
                 {
-                    b.HasOne("Domain.Activity", "Activity")
-                        .WithOne("TripAnomaly")
-                        .HasForeignKey("Domain.TripAnomaly", "Activity_Id");
-
-                    b.HasOne("Domain.Driver", "Driver")
-                        .WithMany()
-                        .HasForeignKey("DriverId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("Domain.Entities.Activity", "Activity")
+                        .WithMany("TripAnomalies")
+                        .HasForeignKey("ActivityId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Mission", "Mission")
+                    b.HasOne("Domain.Entities.Driver", "Driver")
                         .WithMany("TripAnomalies")
-                        .HasForeignKey("MissionId");
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.HasOne("Domain.User", "Reviewer")
-                        .WithMany()
-                        .HasForeignKey("ReviewerId");
+                    b.HasOne("Domain.Entities.Mission", "Mission")
+                        .WithMany("TripAnomalies")
+                        .HasForeignKey("MissionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.HasOne("Domain.Vehicle", "Vehicle")
-                        .WithMany()
+                    b.HasOne("Domain.Entities.User", "Reviewer")
+                        .WithMany("ReviewedTripAnomalies")
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Entities.Vehicle", "Vehicle")
+                        .WithMany("TripAnomalies")
                         .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Activity");
@@ -693,17 +646,17 @@ namespace DAL.Migrations
                     b.Navigation("Vehicle");
                 });
 
-            modelBuilder.Entity("Domain.VehicleAlert", b =>
+            modelBuilder.Entity("Domain.Entities.VehicleAlert", b =>
                 {
-                    b.HasOne("Domain.User", "Acknowledger")
+                    b.HasOne("Domain.Entities.User", "Acknowledger")
                         .WithMany()
                         .HasForeignKey("AcknowledgerId");
 
-                    b.HasOne("Domain.User", "Resolver")
+                    b.HasOne("Domain.Entities.User", "Resolver")
                         .WithMany()
                         .HasForeignKey("ResolverId");
 
-                    b.HasOne("Domain.Vehicle", "Vehicle")
+                    b.HasOne("Domain.Entities.Vehicle", "Vehicle")
                         .WithMany("VehicleAlerts")
                         .HasForeignKey("VehicleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -716,55 +669,66 @@ namespace DAL.Migrations
                     b.Navigation("Vehicle");
                 });
 
-            modelBuilder.Entity("Domain.Activity", b =>
+            modelBuilder.Entity("Domain.Entities.Activity", b =>
                 {
                     b.Navigation("InvoiceLine");
 
-                    b.Navigation("TripAnomaly");
+                    b.Navigation("TripAnomalies");
                 });
 
-            modelBuilder.Entity("Domain.ActivityType", b =>
+            modelBuilder.Entity("Domain.Entities.ActivityType", b =>
                 {
                     b.Navigation("Activities");
                 });
 
-            modelBuilder.Entity("Domain.Driver", b =>
+            modelBuilder.Entity("Domain.Entities.Driver", b =>
                 {
                     b.Navigation("Activities");
 
                     b.Navigation("Missions");
 
                     b.Navigation("Timesheets");
+
+                    b.Navigation("TripAnomalies");
                 });
 
-            modelBuilder.Entity("Domain.Mission", b =>
+            modelBuilder.Entity("Domain.Entities.Invoice", b =>
+                {
+                    b.Navigation("InvoiceLines");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Mission", b =>
                 {
                     b.Navigation("Activities");
 
                     b.Navigation("TripAnomalies");
                 });
 
-            modelBuilder.Entity("Domain.Sites", b =>
+            modelBuilder.Entity("Domain.Entities.Sites", b =>
                 {
                     b.Navigation("Invoices");
 
                     b.Navigation("Missions");
                 });
 
-            modelBuilder.Entity("Domain.User", b =>
+            modelBuilder.Entity("Domain.Entities.User", b =>
                 {
                     b.Navigation("ApprovedTimesheets");
 
                     b.Navigation("CreatedInvoices");
 
+                    b.Navigation("ReviewedTripAnomalies");
+
                     b.Navigation("ValidatedActivities");
                 });
 
-            modelBuilder.Entity("Domain.Vehicle", b =>
+            modelBuilder.Entity("Domain.Entities.Vehicle", b =>
                 {
                     b.Navigation("Missions");
 
                     b.Navigation("Positions");
+
+                    b.Navigation("TripAnomalies");
 
                     b.Navigation("VehicleAlerts");
                 });

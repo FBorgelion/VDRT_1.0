@@ -9,9 +9,9 @@ namespace Domain.Entities
     {
 
         public int Id { get; set; }
-        public int Site_Id { get; set; }
-        public int Vehicle_Id { get; set; }
-        public int Driver_Id { get; set; }
+        public int SiteId { get; set; }
+        public int VehicleId { get; set; }
+        public int DriverId { get; set; }
         public int Duration { get; set; }
         public DateTime Date { get; set; }
 
