@@ -9,9 +9,9 @@ namespace Domain.Entities
     {
 
         public int Id { get; set; }
-        public int Vehicle_Id { get; set; }
-        public string AlertType { get; set; }
-        public string Severity { get; set; }
+        public int VehicleId { get; set; }
+        public string AlertType { get; set; } = string.Empty;
+        public string Severity { get; set; } = string.Empty;
         public decimal MetricValue { get; set; }
         public DateTime Timestamp { get; set; }
 

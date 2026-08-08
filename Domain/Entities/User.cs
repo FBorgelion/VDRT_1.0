@@ -16,9 +16,11 @@ namespace Domain.Entities
 
 
         //Navigation 
-        public ICollection<Activity> ValidatedActivities { get; set; }
-        public ICollection<Timesheet> ApprovedTimesheets { get; set; }
-        public ICollection<Invoice> CreatedInvoices { get; set; }
+        public ICollection<Activity> ValidatedActivities { get; set; } = new List<Activity>();
+        public ICollection<Timesheet> ApprovedTimesheets { get; set; } = new List<Timesheet>();
+        public ICollection<Invoice> CreatedInvoices { get; set; } = new List<Invoice>();
+        public ICollection<TripAnomaly> ReviewedTripAnomalies { get; set; } = new List<TripAnomaly>();
+
 
     }
 }

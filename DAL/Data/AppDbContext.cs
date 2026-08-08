@@ -32,17 +32,125 @@ namespace DAL.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Activity>()
-                .HasOne(a => a.TripAnomaly)
-                .WithOne(ta => ta.Activity)
-                .HasForeignKey<TripAnomaly>(ta => ta.Activity_Id)
-                .IsRequired(false);
+            //Driver --> Missions
+            modelBuilder.Entity<Mission>()
+                .HasOne(m => m.Driver)
+                .WithMany(d => d.Missions)
+                .HasForeignKey(m => m.DriverId)
+                .OnDelete(DeleteBehavior.Restrict);
 
+            //Vehicle --> Missions
+            modelBuilder.Entity<Mission>()
+                .HasOne(m => m.Vehicle)
+                .WithMany(v => v.Missions)
+                .HasForeignKey(m => m.VehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            //Site --> Missions
+            modelBuilder.Entity<Mission>()
+                .HasOne(m => m.Site)
+                .WithMany(s => s.Missions)
+                .HasForeignKey(m => m.SiteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // MISSION → ACTIVITIES
             modelBuilder.Entity<Activity>()
-                .HasOne(a => a.InvoiceLine)
-                .WithOne(il => il.Activity)
-                .HasForeignKey<InvoiceLine>(il => il.Activity_Id)
-                .IsRequired(false);
+                .HasOne(a => a.Mission)
+                .WithMany(m => m.Activities)
+                .HasForeignKey(a => a.MissionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ACTIVITY TYPE → ACTIVITIES
+            modelBuilder.Entity<Activity>()
+                .HasOne(a => a.ActivityType)
+                .WithMany(at => at.Activities)
+                .HasForeignKey(a => a.ActivityTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // DRIVER → ACTIVITIES
+            modelBuilder.Entity<Activity>()
+                .HasOne(a => a.Driver)
+                .WithMany(d => d.Activities)
+                .HasForeignKey(a => a.DriverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // USER → ACTIVITIES VALIDATED
+            modelBuilder.Entity<Activity>()
+                .HasOne(a => a.Validator)
+                .WithMany(u => u.ValidatedActivities)
+                .HasForeignKey(a => a.ValidatorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ACTIVITY → TRIP ANOMALIES
+            modelBuilder.Entity<TripAnomaly>()
+                .HasOne(t => t.Activity)
+                .WithMany(a => a.TripAnomalies)
+                .HasForeignKey(t => t.ActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // MISSION → TRIP ANOMALIES
+            modelBuilder.Entity<TripAnomaly>()
+            .HasOne(t => t.Mission)
+            .WithMany(m => m.TripAnomalies)
+            .HasForeignKey(t => t.MissionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            //ACTIVITY → TRIP ANOMALIES
+            modelBuilder.Entity<TripAnomaly>()
+                .HasOne(t => t.Activity)
+                .WithMany(a => a.TripAnomalies)
+                .HasForeignKey(t => t.ActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // VEHICLE → TRIP ANOMALIES
+            modelBuilder.Entity<TripAnomaly>()
+                .HasOne(t => t.Vehicle)
+                .WithMany(v => v.TripAnomalies)
+                .HasForeignKey(t => t.VehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // DRIVER → TRIP ANOMALIES
+            modelBuilder.Entity<TripAnomaly>()
+                .HasOne(t => t.Driver)
+                .WithMany(d => d.TripAnomalies)
+                .HasForeignKey(t => t.DriverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // USER → TRIP ANOMALIES REVIEWED
+            modelBuilder.Entity<TripAnomaly>()
+                .HasOne(t => t.Reviewer)
+                .WithMany(u => u.ReviewedTripAnomalies)
+                .HasForeignKey(t => t.ReviewerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ACTIVITY → INVOICE LINE
+            modelBuilder.Entity<InvoiceLine>()
+                .HasOne(i => i.Activity)
+                .WithOne(a => a.InvoiceLine)
+                .HasForeignKey<InvoiceLine>(i => i.ActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            //DRIVER → TIMESHEET
+            modelBuilder.Entity<Timesheet>()
+                .HasOne(t => t.Driver)
+                .WithMany(d => d.Timesheets)
+                .HasForeignKey(t => t.DriverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // USER (APPROVER) → TIMESHEET
+            modelBuilder.Entity<Timesheet>()
+                .HasOne(t => t.Approver)
+                .WithMany()
+                .HasForeignKey(t => t.ApproverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // VEHICLE → POSITIONS
+            modelBuilder.Entity<Position>()
+                .HasOne(p => p.Vehicle)
+                .WithMany(v => v.Positions)
+                .HasForeignKey(p => p.VehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
         }
 
 

@@ -16,6 +16,7 @@ namespace Domain.Entities
         public ICollection<Mission> Missions { get; set; } = new List<Mission>();
         public ICollection<Position> Positions { get; set; } = new List<Position>();
         public ICollection<VehicleAlert> VehicleAlerts { get; set; } = new List<VehicleAlert>();
+        public ICollection<TripAnomaly> TripAnomalies { get; set; } = new List<TripAnomaly>();
 
     }
 }
