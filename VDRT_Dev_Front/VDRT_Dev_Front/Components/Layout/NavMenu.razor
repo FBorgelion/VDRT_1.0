@@ -1,30 +1,83 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">VDRT_Dev_Front</a>
-    </div>
-</div>
+﻿@rendermode InteractiveServer
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+<div class="nav-shell">
+    <a class="navbar-brand"
+       href=""
+       aria-label="Retour au tableau de bord">
+        <img src="images/vdrt-logo.png"
+             alt="VDRT - Van Damme R." />
+    </a>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+    <button type="button"
+            class="menu-toggle @(_menuIsOpen ? "menu-toggle--open" : null)"
+            aria-label="Afficher ou masquer la navigation"
+            aria-expanded="@_menuIsOpen"
+            aria-controls="main-navigation"
+            @onclick="ToggleMenu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+    <nav id="main-navigation"
+         class="nav-links @(_menuIsOpen ? "nav-links--open" : null)"
+         aria-label="Navigation principale">
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
+        <NavLink class="nav-link"
+                 href=""
+                 Match="NavLinkMatch.All"
+                 @onclick="CloseMenu">
+            Tableau de bord
+        </NavLink>
+
+        <NavLink class="nav-link"
+                 href="imports"
+                 @onclick="CloseMenu">
+            Importations
+        </NavLink>
+
+        <NavLink class="nav-link"
+                 href="activities"
+                 @onclick="CloseMenu">
+            Anomalies
+        </NavLink>
+
+        <NavLink class="nav-link"
+                 href="drivers"
+                 @onclick="CloseMenu">
+            Chauffeurs
+        </NavLink>
+
+        <NavLink class="nav-link"
+                 href="vehicles"
+                 @onclick="CloseMenu">
+            Véhicules
+        </NavLink>
+
+        <NavLink class="nav-link"
+                 href="sites"
+                 @onclick="CloseMenu">
+            Chantiers
+        </NavLink>
+
+        <NavLink class="nav-link"
+                 href="settings"
+                 @onclick="CloseMenu">
+            Paramètres
+        </NavLink>
     </nav>
 </div>
 
+@code {
+    private bool _menuIsOpen;
+
+    private void ToggleMenu()
+    {
+        _menuIsOpen = !_menuIsOpen;
+    }
+
+    private void CloseMenu()
+    {
+        _menuIsOpen = false;
+    }
+}

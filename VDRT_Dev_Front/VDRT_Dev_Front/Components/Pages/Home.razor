@@ -1,7 +1,429 @@
 ﻿@page "/"
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Tableau de bord | VDRT</PageTitle>
 
-<h1>Hello, world!</h1>
+<header class="page-header">
+    <div>
+        <span class="page-kicker">Vue d'ensemble</span>
+        <h1>Tableau de bord</h1>
+        <p>
+            Visualisez les opérations en cours et accédez rapidement
+            à leurs rapports d'activité.
+        </p>
+    </div>
 
-Welcome to your new app.
+    <div class="current-date">
+        <span>Aujourd'hui</span>
+        <strong>@CurrentDate</strong>
+    </div>
+</header>
+
+<div class="demo-notice" role="status">
+    <span class="demo-dot" aria-hidden="true"></span>
+    <span>Données de démonstration</span>
+</div>
+
+<section class="metrics-grid" aria-label="Indicateurs principaux">
+    <DashboardMetric Label="Anomalies à vérifier" Value="2" Hint="Dont une durée anormale" Tone="warning" />
+
+    <DashboardMetric Label="Missions en cours"
+                     Value="6"
+                     Hint="Sur la période sélectionnée"
+                     Tone="accent" />
+
+    <DashboardMetric Label="Chauffeurs actifs"
+                     Value="6"
+                     Hint="Affectés à une mission" />
+
+    <DashboardMetric Label="Véhicules actifs"
+                     Value="6"
+                     Hint="Dernière donnée il y a 3 min" />
+</section>
+
+<section class="map-panel" aria-labelledby="map-title">
+    <div class="map-heading">
+        <div>
+            <span class="map-kicker">Suivi opérationnel</span>
+            <h2 id="map-title">Carte des activités</h2>
+            <p>Positions simulées pour prévisualiser l'interface.</p>
+        </div>
+
+        <div class="map-summary">
+            <span class="live-indicator" aria-hidden="true"></span>
+            <span>6 missions actives</span>
+        </div>
+    </div>
+
+    <div class="map-controls"
+         aria-label="Contrôles décoratifs de la carte">
+
+        <button type="button"
+                title="Disponible avec la vraie carte"
+                aria-label="Zoom arrière"
+                disabled>
+            −
+        </button>
+
+        <button type="button"
+                class="map-reset"
+                title="Disponible avec la vraie carte"
+                disabled>
+            Recentrer
+        </button>
+
+        <button type="button"
+                title="Disponible avec la vraie carte"
+                aria-label="Zoom avant"
+                disabled>
+            +
+        </button>
+    </div>
+
+    <svg class="map-art"
+         viewBox="0 0 1200 520"
+         preserveAspectRatio="none"
+         aria-hidden="true">
+
+        <path class="map-district"
+              d="M0,70 C135,30 205,105 330,76
+                 C470,43 550,75 655,35
+                 C810,-22 905,72 1040,40
+                 C1110,25 1164,30 1200,45
+                 L1200,0 L0,0 Z" />
+
+        <path class="map-district map-district--secondary"
+              d="M0,420 C145,348 258,448 382,388
+                 C515,322 630,430 760,375
+                 C900,315 1038,386 1200,335
+                 L1200,520 L0,520 Z" />
+
+        <path class="road road--minor"
+              d="M-20,115
+                 C160,168 245,125 388,174
+                 C545,226 688,172 824,225
+                 C960,278 1080,235 1220,290" />
+
+        <path class="road road--minor"
+              d="M120,-20
+                 C165,118 145,224 242,315
+                 C318,386 405,420 470,540" />
+
+        <path class="road road--minor"
+              d="M770,-20
+                 C735,94 787,172 742,280
+                 C708,363 620,427 592,540" />
+
+        <path class="road road--minor"
+              d="M1010,-20
+                 C1002,98 920,170 944,286
+                 C960,370 1062,433 1118,540" />
+
+        <path class="road road--primary"
+              d="M-30,355
+                 C120,330 225,240 385,257
+                 C535,272 606,355 755,321
+                 C905,286 1018,164 1230,188" />
+
+        <path class="road road--primary"
+              d="M340,-30
+                 C390,92 490,125 505,244
+                 C520,355 458,425 450,550" />
+
+        <path class="road road--primary"
+              d="M885,-30
+                 C850,95 852,196 890,290
+                 C925,378 982,455 995,550" />
+
+        <path class="active-route"
+              d="M220,332
+                 C338,272 420,266 504,286
+                 C610,311 655,346 760,319
+                 C838,298 892,245 960,215" />
+    </svg>
+
+    @foreach (var mission in FilteredMissions)
+    {
+        <button type="button"
+                class="map-marker
+                       @StatusCssClass(mission.StatusKey)
+                       @(SelectedMission.Id == mission.Id
+                           ? "map-marker--selected"
+                           : null)"
+                style="left: @(mission.MapX)%; top: @(mission.MapY)%;"
+                title="@mission.SiteName — @mission.DriverName"
+                aria-label="Afficher @mission.SiteName sur la carte"
+                @onclick="() => SelectMission(mission)">
+
+            <span aria-hidden="true"></span>
+        </button>
+    }
+
+    <div class="map-legend" aria-label="Légende de la carte">
+        <span>
+            <i class="legend-dot legend-dot--route"></i>
+            En route
+        </span>
+
+        <span>
+            <i class="legend-dot legend-dot--site"></i>
+            Sur chantier
+        </span>
+
+        <span>
+            <i class="legend-dot legend-dot--warning"></i>
+            À vérifier
+        </span>
+    </div>
+
+    <article class="map-selection" aria-live="polite">
+        <div>
+            <span class="status-pill
+                         @StatusCssClass(SelectedMission.StatusKey)">
+
+                <span aria-hidden="true"></span>
+                @SelectedMission.StatusLabel
+            </span>
+
+            <span class="mission-reference">
+                @SelectedMission.Reference
+            </span>
+        </div>
+
+        <h3>@SelectedMission.SiteName</h3>
+
+        <p>
+            @SelectedMission.DriverName ·
+            @SelectedMission.VehicleName
+        </p>
+
+        <a href="activities?mission=@SelectedMission.Id">
+            Voir le rapport
+            <span aria-hidden="true">→</span>
+        </a>
+    </article>
+</section>
+
+<section class="activity-section"
+         aria-labelledby="activities-title">
+
+    <header class="section-heading">
+        <div>
+            <span class="panel-kicker">Vue synthétique</span>
+            <h2 id="activities-title">Activités en cours</h2>
+            <p>
+                Les cartes et les marqueurs représentent les mêmes missions.
+            </p>
+        </div>
+
+        <a class="all-activities-link" href="activities">
+            Voir toutes les activités
+            <span aria-hidden="true">→</span>
+        </a>
+    </header>
+
+    <div class="filter-tabs"
+         role="group"
+         aria-label="Filtrer les activités">
+
+        @foreach (var filter in Filters)
+        {
+            <button type="button"
+                    class="@(ActiveFilter == filter.Key
+                        ? "active"
+                        : null)"
+                    aria-pressed="@(ActiveFilter == filter.Key)"
+                    @onclick="() => SetFilter(filter.Key)">
+
+                @filter.Label
+                <span>@CountForFilter(filter.Key)</span>
+            </button>
+        }
+    </div>
+
+    <div class="mission-grid">
+        @foreach (var mission in FilteredMissions)
+        {
+            <ActiveMissionCard
+                Reference="@mission.Reference"
+                SiteName="@mission.SiteName"
+                DriverName="@mission.DriverName"
+                VehicleName="@mission.VehicleName"
+                StatusLabel="@mission.StatusLabel"
+                StatusTone="@mission.StatusKey"
+                StartTime="@mission.StartTime"
+                Duration="@mission.Duration"
+                Anomaly="@mission.Anomaly"
+                ReportHref="@($"activities?mission={mission.Id}")"
+                IsSelected="@(SelectedMission.Id == mission.Id)"
+                OnSelect="@(() => SelectMission(mission))" />
+        }
+    </div>
+</section>
+
+@code {
+    private const string AllFilter = "all";
+
+    private readonly IReadOnlyList<DashboardMission> _missions =
+    [
+        new(
+            1042,
+            "CH-2408",
+            "Chantier Mons Centre",
+            "Jean Dupont",
+            "Camion 24 · 1-ABC-024",
+            "Sur chantier",
+            "site",
+            "07:42",
+            "3 h 18",
+            null,
+            58,
+            38),
+
+        new(
+            1182,
+            "EG-1182",
+            "Égouttage Binche Nord",
+            "Marc Leroy",
+            "Camion 12 · 1-VDR-012",
+            "En route",
+            "route",
+            "08:15",
+            "1 h 06",
+            null,
+            31,
+            62),
+
+        new(
+            941,
+            "TR-0941",
+            "Terrassement La Louvière",
+            "Luc Martin",
+            "Camion 08 · 1-TRK-008",
+            "À vérifier",
+            "warning",
+            "06:58",
+            "4 h 02",
+            "Arrêt non identifié de 47 min",
+            72,
+            57),
+
+        new(
+            2087,
+            "DM-2087",
+            "Démolition Charleroi",
+            "Thomas Bernard",
+            "Camion 31 · 1-VDR-031",
+            "En route",
+            "route",
+            "09:03",
+            "42 min",
+            null,
+            81,
+            41),
+
+        new(
+            1620,
+            "AM-1620",
+            "Aménagement Soignies",
+            "Nicolas Simon",
+            "Camion 17 · 1-BTP-017",
+            "Sur chantier",
+            "site",
+            "07:26",
+            "3 h 34",
+            null,
+            44,
+            51),
+
+        new(
+            754,
+            "DP-0754",
+            "Dépôt de Carnières",
+            "Julien Moreau",
+            "Camion 05 · 1-VDR-005",
+            "À vérifier",
+            "warning",
+            "08:51",
+            "54 min",
+            "Données OBU incomplètes",
+            64,
+            68)
+    ];
+
+    private readonly IReadOnlyList<ActivityFilter> Filters =
+    [
+        new(AllFilter, "Toutes"),
+        new("route", "En route"),
+        new("site", "Sur chantier"),
+        new("warning", "À vérifier")
+    ];
+
+    private string ActiveFilter { get; set; } = AllFilter;
+
+    private DashboardMission SelectedMission { get; set; } = default!;
+
+    private IEnumerable<DashboardMission> FilteredMissions =>
+        ActiveFilter == AllFilter
+            ? _missions
+            : _missions.Where(
+                mission => mission.StatusKey == ActiveFilter);
+
+    private string CurrentDate =>
+        DateTime.Today.ToString(
+            "dddd d MMMM yyyy",
+            System.Globalization.CultureInfo
+                .GetCultureInfo("fr-BE"));
+
+    protected override void OnInitialized()
+    {
+        SelectedMission = _missions[0];
+    }
+
+    private int CountForFilter(string filter)
+    {
+        return filter == AllFilter
+            ? _missions.Count
+            : _missions.Count(
+                mission => mission.StatusKey == filter);
+    }
+
+    private static string StatusCssClass(string status)
+    {
+        return $"status--{status}";
+    }
+
+    private void SelectMission(DashboardMission mission)
+    {
+        SelectedMission = mission;
+    }
+
+    private void SetFilter(string filter)
+    {
+        ActiveFilter = filter;
+
+        if (!FilteredMissions.Any(
+                mission => mission.Id == SelectedMission.Id))
+        {
+            SelectedMission = FilteredMissions.First();
+        }
+    }
+
+    private sealed record ActivityFilter(
+        string Key,
+        string Label);
+
+    private sealed record DashboardMission(
+        int Id,
+        string Reference,
+        string SiteName,
+        string DriverName,
+        string VehicleName,
+        string StatusLabel,
+        string StatusKey,
+        string StartTime,
+        string Duration,
+        string? Anomaly,
+        int MapX,
+        int MapY);
+}

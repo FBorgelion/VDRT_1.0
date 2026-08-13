@@ -1,0 +1,104 @@
+﻿<article class="mission-card @(IsSelected ? "mission-card--selected" : null)">
+    <div class="mission-card__content">
+        <div class="mission-card__topline">
+            <span class="status-pill @StatusClass">
+                <span aria-hidden="true"></span>
+                @StatusLabel
+            </span>
+
+            <span class="mission-reference">
+                @Reference
+            </span>
+        </div>
+
+        <h3>@SiteName</h3>
+
+        <dl class="mission-details">
+            <div>
+                <dt>Chauffeur</dt>
+                <dd>@DriverName</dd>
+            </div>
+
+            <div>
+                <dt>Véhicule</dt>
+                <dd>@VehicleName</dd>
+            </div>
+        </dl>
+
+        <div class="mission-timing">
+            <span>
+                <small>Début</small>
+                <strong>@StartTime</strong>
+            </span>
+
+            <span>
+                <small>Durée</small>
+                <strong>@Duration</strong>
+            </span>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Anomaly))
+        {
+            <p class="mission-anomaly">
+                <span aria-hidden="true">!</span>
+                @Anomaly
+            </p>
+        }
+    </div>
+
+    <footer>
+        <button type="button"
+                class="mission-map-action"
+                aria-pressed="@(IsSelected ? "true" : "false")"
+                @onclick="() => OnSelect.InvokeAsync()">
+
+            <span aria-hidden="true">⌖</span>
+            @(IsSelected ? "Affichée" : "Localiser")
+        </button>
+
+        <a href="@ReportHref">
+            Voir le rapport
+            <span aria-hidden="true">→</span>
+        </a>
+    </footer>
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Reference { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string SiteName { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string DriverName { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string VehicleName { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string StatusLabel { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string StatusTone { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string StartTime { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public string Duration { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Anomaly { get; set; }
+
+    [Parameter, EditorRequired]
+    public string ReportHref { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool IsSelected { get; set; }
+
+    [Parameter]
+    public EventCallback OnSelect { get; set; }
+
+    private string StatusClass => $"status--{StatusTone}";
+}
