@@ -1,11 +1,14 @@
+
+using BL.Settings;
 using BL.Interfaces.Services;
 using BL.Mappers;
 using BL.Services;
 using DAL.Data;
 using DAL.Interfaces.Repositories;
 using DAL.Repositories;
+using Domain.Activities;
+using Domain.Activities.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +78,16 @@ builder.Services.AddScoped<IPositionService, PositionService>();
 
 builder.Services.AddScoped<IActivityRepo, ActivityRepo>();
 builder.Services.AddScoped<IActivityService, ActivityService>();
+
+builder.Services.AddSingleton<IActivityCodeMapper, ActivityCodeMapper>();
+
+builder.Services.AddSingleton(new ActivityReconstructionSettings
+    {
+        ExcessiveDurationThreshold =
+            TimeSpan.FromHours(24)
+    });
+
+builder.Services.AddScoped<IActivityReconstructionService, ActivityReconstructionService>();
 
 builder.Services.AddAutoMapper(
     cfg => { },
