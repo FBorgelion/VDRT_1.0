@@ -6,9 +6,8 @@ namespace Domain.Activities
 {
     public enum ActivityCandidateStatus
     {
-        Recognized,
-        PendingReview,
-        Unknown,
-        Invalid
+        RequiresReview = 0,
+        Recognized = 1,
+        Unmapped = 2
     }
 }

@@ -6,7 +6,7 @@ namespace Domain.Activities
 {
     public enum ActivityLifecycleState
     {
-        OpenAtImportBoundary,
-        Closed
+        Complete = 0,
+        OpenAtImportBoundary = 1
     }
 }

@@ -7,7 +7,7 @@ namespace BL.Settings
     public sealed class ActivityReconstructionSettings
     {
 
-        public TimeSpan ExcessiveDurationThreshold { get; init; } = TimeSpan.FromHours(24);
+        public long? MaximumActivityDurationMilliseconds { get; set; }
 
     }
 }

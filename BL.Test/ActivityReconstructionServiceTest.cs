@@ -1,256 +1,159 @@
-﻿using BL.Services;
+﻿using BL.Interfaces.Services;
+using BL.Services;
 using BL.Settings;
 using Domain.Activities;
 
-namespace BL.Tests;
-
-public sealed class ActivityReconstructionServiceTests
+namespace BL.Tests.Services
 {
-    private readonly ActivityReconstructionService _service;
-
-    public ActivityReconstructionServiceTests()
+    public class ActivityReconstructionServiceTests
     {
-        ActivityCodeMapper mapper = new ActivityCodeMapper();
+        private readonly IActivityReconstructionService _service;
 
-        ActivityReconstructionSettings settings = new ActivityReconstructionSettings
+        public ActivityReconstructionServiceTests()
+        {
+            ActivityReconstructionSettings settings = new()
             {
-                ExcessiveDurationThreshold =
-                    TimeSpan.FromHours(24)
+                MaximumActivityDurationMilliseconds = null
             };
 
-        _service = new ActivityReconstructionService(mapper, settings);
-    }
+            IActivityCodeMapper activityCodeMapper =
+                new ActivityCodeMapper();
 
-    [Theory]
-    [InlineData(11)]
-    [InlineData(13)]
-    public void Type11Or13ClosesActivityAndUsesAstPlusAlen(
-        int closingType)
-    {
-        DateTime start = new DateTime(
-            2026,
-            1,
-            17,
-            22,
-            25,
-            0,
-            DateTimeKind.Unspecified);
+            IActivityAnomalyDetector anomalyDetector =
+                new ActivityAnomalyDetector(settings);
 
-        DateTime technicalTransmissionTime =
-            start.AddHours(4);
+            _service = new ActivityReconstructionService(
+                activityCodeMapper,
+                anomalyDetector);
+        }
 
-        List<RawActivityTrace> traces =
-            new List<RawActivityTrace>
+        [Fact]
+        public void Reconstruct_ShouldCreateCompleteDrivingActivity()
+        {
+            DateTime startTime =
+                new DateTime(2026, 1, 18, 8, 0, 0);
+
+            List<RawActivityTrace> traces = new()
             {
-                CreateTrace(
-                    traceType: 10,
-                    position: 1,
-                    activityStart: start,
-                    technicalTime: start.AddMinutes(1),
-                    durationMilliseconds: null,
-                    activityCode: "DR"),
-
-                CreateTrace(
-                    traceType: closingType,
-                    position: 2,
-                    activityStart: start,
-                    technicalTime:
-                        technicalTransmissionTime,
-                    durationMilliseconds: 1_800_000,
-                    activityCode: "DR")
+                new RawActivityTrace
+                {
+                    TraceType = ActivityTraceTypes.Opening,
+                    SourceId = "vehicle-1",
+                    LinkId = "activity-123",
+                    ActivityCode = "DR",
+                    DriverId = "592",
+                    Sequence = 100,
+                    TechnicalTime = startTime,
+                    ActivityStartTime = startTime
+                },
+                new RawActivityTrace
+                {
+                    TraceType = ActivityTraceTypes.ValidatedClosing,
+                    SourceId = "vehicle-1",
+                    LinkId = "activity-123",
+                    ActivityCode = "DR",
+                    DriverId = "592",
+                    Sequence = 100,
+                    TechnicalTime = startTime.AddHours(1),
+                    ActivityStartTime = startTime,
+                    ActivityLengthMilliseconds = 3_600_000
+                }
             };
 
-        ReconstructedActivity result =
-            _service.Reconstruct(traces).Single();
+            IReadOnlyList<ReconstructedActivity> result =
+                _service.Reconstruct(traces);
 
-        Assert.Equal(
-            ActivityLifecycleState.Closed,
-            result.LifecycleState);
+            ReconstructedActivity activity =
+                Assert.Single(result);
 
-        Assert.Equal(
-            ActivityCandidateStatus.Recognized,
-            result.CandidateStatus);
+            Assert.Equal(ActivityKind.Driving, activity.ActivityKind);
+            Assert.Equal(
+                ActivityLifecycleState.Complete,
+                activity.LifecycleState);
+            Assert.Equal(
+                ActivityCandidateStatus.Recognized,
+                activity.CandidateStatus);
+            Assert.Equal(
+                startTime.AddHours(1),
+                activity.EndTime);
+            Assert.Equal("592", Assert.Single(activity.DriverIds));
+        }
 
-        Assert.Equal(
-            start.AddMinutes(30),
-            result.CalculatedEndTime);
+        [Fact]
+        public void Reconstruct_ShouldKeepActivityOpenWhenClosingTraceIsMissing()
+        {
+            DateTime startTime =
+                new DateTime(2026, 1, 18, 8, 0, 0);
 
-        Assert.NotEqual(
-            technicalTransmissionTime,
-            result.CalculatedEndTime);
-
-        Assert.Equal(
-            TimeSpan.FromMinutes(30),
-            result.Duration);
-    }
-
-    [Fact]
-    public void Type12AndType9DoNotCloseActivity()
-    {
-        DateTime start = new DateTime(
-            2026,
-            1,
-            17,
-            22,
-            25,
-            0,
-            DateTimeKind.Unspecified);
-
-        List<RawActivityTrace> traces =
-            new List<RawActivityTrace>
+            List<RawActivityTrace> traces = new()
             {
-                CreateTrace(
-                    traceType: 10,
-                    position: 1,
-                    activityStart: start,
-                    technicalTime: start.AddMinutes(1),
-                    durationMilliseconds: null,
-                    activityCode: "DR"),
-
-                CreateTrace(
-                    traceType: 12,
-                    position: 2,
-                    activityStart: start,
-                    technicalTime: start.AddMinutes(10),
-                    durationMilliseconds: 600_000,
-                    activityCode: "DR"),
-
-                CreateTrace(
-                    traceType: 9,
-                    position: 3,
-                    activityStart: start,
-                    technicalTime: start.AddHours(1),
-                    durationMilliseconds: null,
-                    activityCode: "DR")
+                new RawActivityTrace
+                {
+                    TraceType = ActivityTraceTypes.Opening,
+                    SourceId = "vehicle-1",
+                    LinkId = "activity-123",
+                    ActivityCode = "DR",
+                    DriverId = "592",
+                    Sequence = 100,
+                    TechnicalTime = startTime,
+                    ActivityStartTime = startTime
+                }
             };
 
-        ReconstructedActivity result =
-            _service.Reconstruct(traces).Single();
+            ReconstructedActivity activity =
+                Assert.Single(_service.Reconstruct(traces));
 
-        Assert.Equal(
-            ActivityLifecycleState.OpenAtImportBoundary,
-            result.LifecycleState);
+            Assert.Equal(
+                ActivityLifecycleState.OpenAtImportBoundary,
+                activity.LifecycleState);
 
-        Assert.Equal(
-            ActivityCandidateStatus.PendingReview,
-            result.CandidateStatus);
+            Assert.Null(activity.EndTime);
 
-        Assert.False(
-            result.IsStructurallyComplete);
+            Assert.Contains(
+                activity.Anomalies,
+                anomaly => anomaly.Code
+                    == ActivityAnomalyCode.MissingClosingTrace);
+        }
 
-        Assert.Equal(
-            3,
-            result.SourceTraces.Count);
-    }
+        [Fact]
+        public void Reconstruct_ShouldRequireReviewForUnknownActivity()
+        {
+            DateTime startTime =
+                new DateTime(2026, 1, 18, 8, 0, 0);
 
-    [Fact]
-    public void UnknownActivityRequiresReviewAndSplitsDriverIds()
-    {
-        DateTime start = new DateTime(
-            2026,
-            1,
-            17,
-            22,
-            25,
-            0,
-            DateTimeKind.Unspecified);
-
-        List<RawActivityTrace> traces =
-            new List<RawActivityTrace>
+            List<RawActivityTrace> traces = new()
             {
-                CreateTrace(
-                    traceType: 10,
-                    position: 1,
-                    activityStart: start,
-                    technicalTime: start.AddMinutes(1),
-                    durationMilliseconds: null,
-                    activityCode: "UN",
-                    rawDriverIds: "877;592"),
-
-                CreateTrace(
-                    traceType: 13,
-                    position: 2,
-                    activityStart: start,
-                    technicalTime: start.AddMinutes(31),
-                    durationMilliseconds: 1_800_000,
-                    activityCode: "UN",
-                    rawDriverIds: "877;592")
+                new RawActivityTrace
+                {
+                    TraceType = ActivityTraceTypes.Opening,
+                    SourceId = "vehicle-1",
+                    LinkId = "activity-123",
+                    ActivityCode = "UN",
+                    DriverId = "592",
+                    TechnicalTime = startTime,
+                    ActivityStartTime = startTime
+                },
+                new RawActivityTrace
+                {
+                    TraceType = ActivityTraceTypes.Closing,
+                    SourceId = "vehicle-1",
+                    LinkId = "activity-123",
+                    ActivityCode = "UN",
+                    DriverId = "592",
+                    TechnicalTime = startTime.AddMinutes(10),
+                    ActivityStartTime = startTime,
+                    ActivityLengthMilliseconds = 600_000
+                }
             };
 
-        ReconstructedActivity result =
-            _service.Reconstruct(traces).Single();
+            ReconstructedActivity activity =
+                Assert.Single(_service.Reconstruct(traces));
 
-        Assert.Equal(
-            ActivityCandidateStatus.Unknown,
-            result.CandidateStatus);
+            Assert.Equal(ActivityKind.Unknown, activity.ActivityKind);
 
-        Assert.Contains(
-            "877",
-            result.ExternalDriverIds);
-
-        Assert.Contains(
-            "592",
-            result.ExternalDriverIds);
-
-        Assert.False(
-            result.IsStructurallyComplete);
-    }
-
-    private static RawActivityTrace CreateTrace(
-        int traceType,
-        int position,
-        DateTime activityStart,
-        DateTime technicalTime,
-        long? durationMilliseconds,
-        string activityCode,
-        string rawDriverIds = "877")
-    {
-        RawActivityTrace trace =
-            new RawActivityTrace
-            {
-                ImportFingerprint =
-                    "test-import-file",
-
-                PositionInFile =
-                    position,
-
-                ExternalActivityId =
-                    "600008276176869056825837",
-
-                RawSourceReference =
-                    "S119",
-
-                RawTraceType =
-                    traceType,
-
-                RawTraceTime =
-                    technicalTime.ToString("O"),
-
-                TraceTime =
-                    technicalTime,
-
-                ExternalSequenceNumber =
-                    position,
-
-                RawActivityCode =
-                    activityCode,
-
-                RawActivityStartTime =
-                    activityStart.ToString("O"),
-
-                ActivityStartTime =
-                    activityStart,
-
-                DurationMilliseconds =
-                    durationMilliseconds,
-
-                RawExternalDriverIds =
-                    rawDriverIds,
-
-                RawXml =
-                    "<trace />"
-            };
-
-        return trace;
+            Assert.Equal(
+                ActivityCandidateStatus.RequiresReview,
+                activity.CandidateStatus);
+        }
     }
 }

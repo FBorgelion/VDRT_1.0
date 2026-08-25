@@ -1,285 +1,356 @@
-﻿using BL.Settings;
-using BL.Interfaces.Services;
+﻿using BL.Interfaces.Services;
 using Domain.Activities;
-using Domain.Activities.Interfaces;
 
-namespace BL.Services;
-
-public sealed class ActivityReconstructionService
-    : IActivityReconstructionService
+namespace BL.Services
 {
-    private readonly IActivityCodeMapper _codeMapper;
-    private readonly ActivityReconstructionSettings _settings;
-
-    public ActivityReconstructionService(IActivityCodeMapper codeMapper, ActivityReconstructionSettings settings)
+    public class ActivityReconstructionService : IActivityReconstructionService
     {
-        _codeMapper = codeMapper;
-        _settings = settings;
-    }
+        private readonly IActivityCodeMapper _activityCodeMapper;
+        private readonly IActivityAnomalyDetector _anomalyDetector;
 
-    public IReadOnlyList<ReconstructedActivity> Reconstruct(
-        IEnumerable<RawActivityTrace> traces)
-    {
-        ArgumentNullException.ThrowIfNull(traces);
-
-        return traces
-            .Where(trace =>
-                !string.IsNullOrWhiteSpace(trace.ExternalActivityId))
-            .GroupBy(trace => new ActivityKey(
-                trace.RawSourceReference,
-                trace.ExternalActivityId))
-            .Select(ReconstructGroup)
-            .OrderBy(activity => activity.StartTime ?? DateTime.MaxValue)
-            .ThenBy(activity => activity.ExternalActivityId)
-            .ToList();
-    }
-
-    private ReconstructedActivity ReconstructGroup(IGrouping<ActivityKey, RawActivityTrace> group)
-    {
-        var orderedTraces = group
-            .OrderBy(trace => trace.TraceTime.HasValue ? 0 : 1)
-            .ThenBy(trace => trace.TraceTime)
-            .ThenBy(trace =>
-                trace.ExternalSequenceNumber.HasValue ? 0 : 1)
-            .ThenBy(trace => trace.ExternalSequenceNumber)
-            .ThenBy(trace => trace.PositionInFile)
-            .ToList();
-
-        var anomalies = new List<ActivityAnomaly>();
-
-        var hasOpeningTrace = orderedTraces.Any(trace => trace.RawTraceType == 10);
-
-        var hasClosingTrace = orderedTraces.Any(trace => IsClosingTrace(trace.RawTraceType));
-
-        if (!hasOpeningTrace)
+        public ActivityReconstructionService(IActivityCodeMapper activityCodeMapper, IActivityAnomalyDetector anomalyDetector)
         {
-            anomalies.Add(new ActivityAnomaly(
-                ActivityAnomalyCode.MissingOpeningTrace,
-                "Opening trace 10 missing in the import.",
-                false));
+            _activityCodeMapper = activityCodeMapper ?? throw new ArgumentNullException(nameof(activityCodeMapper));
+
+            _anomalyDetector = anomalyDetector ?? throw new ArgumentNullException(nameof(anomalyDetector));
         }
 
-        if (!hasClosingTrace)
+        public IReadOnlyList<ReconstructedActivity> Reconstruct(IEnumerable<RawActivityTrace> rawTraces)
         {
-            anomalies.Add(new ActivityAnomaly(
-                ActivityAnomalyCode.MissingClosingTrace,
-                "No ending trace 11 or 13 present. The activity is open at the limit of the import, but not necessarily still active.",
-                true));
+            List<RawActivityTrace> traces = ValidateAndMaterialize(rawTraces);
+
+            IReadOnlyList<RawActivityTrace> activityTraces = FindActivityTraces(traces);
+
+            IReadOnlyList<ActivityTraceGroup> traceGroups = GroupTraces(activityTraces);
+
+            List<ReconstructedActivity> reconstructedActivities = new();
+
+            foreach (ActivityTraceGroup traceGroup in traceGroups)
+            {
+                ReconstructedActivity reconstructedActivity = ReconstructGroup(traceGroup);
+
+                reconstructedActivities.Add(reconstructedActivity);
+            }
+
+            return reconstructedActivities.AsReadOnly();
         }
 
-        var tracesWithStart = orderedTraces
-            .Where(trace => trace.ActivityStartTime.HasValue)
-            .ToList();
-
-        var distinctStartTimes = tracesWithStart
-            .Select(trace => trace.ActivityStartTime!.Value)
-            .Distinct()
-            .ToList();
-
-        var startTime = tracesWithStart
-            .LastOrDefault()
-            ?.ActivityStartTime;
-
-        if (!startTime.HasValue)
+        private static List<RawActivityTrace> ValidateAndMaterialize(IEnumerable<RawActivityTrace> rawTraces)
         {
-            anomalies.Add(new ActivityAnomaly(
-                ActivityAnomalyCode.MissingStartTime,
-                "The AST property is missing.",
-                true));
+            ArgumentNullException.ThrowIfNull(rawTraces);
+
+            List<RawActivityTrace> traces = rawTraces.ToList();
+
+            foreach (RawActivityTrace trace in traces)
+            {
+                if (trace is null)
+                {
+                    throw new ArgumentException(
+                        "Collection contains a null trace.",
+                        nameof(rawTraces));
+                }
+
+                bool isActivityTrace = ActivityTraceTypes.IsActivityTrace(trace.TraceType);
+
+                if (!isActivityTrace)
+                {
+                    continue;
+                }
+
+                ValidateActivityTraceIdentifiers(trace);
+            }
+
+            return traces;
         }
 
-        if (distinctStartTimes.Count > 1)
+        private static void ValidateActivityTraceIdentifiers(RawActivityTrace trace)
         {
-            anomalies.Add(new ActivityAnomaly(
-                ActivityAnomalyCode.ConflictingStartTime,
-                "Multiple different AST values exist for the same LID.",
-                true));
+            if (string.IsNullOrWhiteSpace(trace.SourceId))
+            {
+                throw new ArgumentException("Activity trace must have a source ID.");
+            }
+
+            if (string.IsNullOrWhiteSpace(trace.LinkId))
+            {
+                throw new ArgumentException(
+                    "Activity trace must have a link ID.");
+            }
         }
 
-        // Une durée portée par une clôture 11/13 est prioritaire.
-        var durationTrace = orderedTraces.LastOrDefault(trace => IsClosingTrace(trace.RawTraceType) && trace.DurationMilliseconds.HasValue);
-
-        if (durationTrace == null)
+        private static IReadOnlyList<RawActivityTrace> FindActivityTraces(IEnumerable<RawActivityTrace> traces)
         {
-            durationTrace = orderedTraces.LastOrDefault(trace => trace.DurationMilliseconds.HasValue);
+            List<RawActivityTrace> activityTraces = traces
+                .Where(
+                    trace => ActivityTraceTypes.IsActivityTrace(trace.TraceType))
+                .ToList();
+
+            return activityTraces.AsReadOnly();
         }
 
-        var durationMilliseconds = durationTrace?.DurationMilliseconds;
-
-        var distinctFinalDurations = orderedTraces
-            .Where(trace => IsClosingTrace(trace.RawTraceType) && trace.DurationMilliseconds.HasValue)
-            .Select(trace => trace.DurationMilliseconds!.Value)
-            .Distinct()
-            .ToList();
-
-        if (hasClosingTrace && !durationMilliseconds.HasValue)
+        private static IReadOnlyList<ActivityTraceGroup> GroupTraces(IEnumerable<RawActivityTrace> traces)
         {
-            anomalies.Add(new ActivityAnomaly(
-                ActivityAnomalyCode.MissingDuration,
-                "Activity has a closing trace but no duration is available.",
-                true));
+            List<ActivityTraceGroup> groups = traces
+                .GroupBy(
+                    trace => new
+                    {
+                        SourceId = trace.SourceId.Trim(),
+                        LinkId = trace.LinkId!.Trim()
+                    })
+                .OrderBy(group => group.Key.SourceId)
+                .ThenBy(group => group.Key.LinkId)
+                .Select(
+                    group => new ActivityTraceGroup(
+                        group.Key.SourceId,
+                        group.Key.LinkId,
+                        group))
+                .ToList();
+
+            return groups.AsReadOnly();
         }
 
-        if (durationMilliseconds < 0)
+        private ReconstructedActivity ReconstructGroup(ActivityTraceGroup traceGroup)
         {
-            anomalies.Add(new ActivityAnomaly(
-                ActivityAnomalyCode.NonPositiveDuration,
-                "The ALEN duration is negative.",
-                true));
+            IReadOnlyList<RawActivityTrace> orderedTraces = OrderTraces(traceGroup.Traces);
+
+            RawActivityTrace? openingTrace = FindOpeningTrace(orderedTraces);
+
+            RawActivityTrace? closingTrace = FindClosingTrace(orderedTraces);
+
+            string? rawActivityCode = FindLastKnownActivityCode(orderedTraces);
+
+            ActivityKind activityKind = _activityCodeMapper.Map(rawActivityCode);
+
+            DateTime? startTime = DetermineStartTime(openingTrace, orderedTraces);
+
+            long? durationMilliseconds = DetermineDuration(closingTrace);
+
+            DateTime? endTime = DetermineEndTime(startTime, durationMilliseconds);
+
+            IReadOnlyList<string> driverIds = ExtractDriverIds(orderedTraces);
+
+            ActivityLifecycleState lifecycleState = DetermineLifecycleState(closingTrace);
+
+            ReconstructedActivity candidate =
+                CreateCandidate(
+                    traceGroup,
+                    orderedTraces,
+                    rawActivityCode,
+                    activityKind,
+                    startTime,
+                    endTime,
+                    durationMilliseconds,
+                    driverIds,
+                    lifecycleState);
+
+            IReadOnlyList<ActivityAnomaly> anomalies = _anomalyDetector.Detect(candidate);
+
+            ActivityCandidateStatus candidateStatus = DetermineCandidateStatus(candidate, anomalies);
+
+            candidate.ApplyAnalysis(candidateStatus, anomalies);
+
+            return candidate;
         }
 
-        if (hasClosingTrace && durationMilliseconds == 0)
+        private static IReadOnlyList<RawActivityTrace> OrderTraces(IEnumerable<RawActivityTrace> traces)
         {
-            anomalies.Add(new ActivityAnomaly(
-                ActivityAnomalyCode.NonPositiveDuration,
-                "The activity is closed with a zero duration.",
-                true));
+            List<RawActivityTrace> orderedTraces = traces
+                .OrderBy(
+                    trace => trace.Sequence ?? long.MaxValue)
+                .ThenBy(trace => trace.TechnicalTime)
+                .ThenBy(trace => trace.TraceType)
+                .ToList();
+
+            return orderedTraces.AsReadOnly();
         }
 
-        if (durationMilliseconds >
-            _settings.ExcessiveDurationThreshold.TotalMilliseconds)
+        private static RawActivityTrace? FindOpeningTrace(IEnumerable<RawActivityTrace> traces)
         {
-            anomalies.Add(new ActivityAnomaly(
-                ActivityAnomalyCode.ExcessiveDuration,
-                $"The duration exceeds the threshold of {_settings.ExcessiveDurationThreshold.TotalHours:N0} hours.",
-                true));
+            return traces.FirstOrDefault(
+                trace => trace.TraceType
+                    == ActivityTraceTypes.Opening);
         }
 
-        if (distinctFinalDurations.Count > 1)
+        private static RawActivityTrace? FindClosingTrace(IEnumerable<RawActivityTrace> traces)
         {
-            anomalies.Add(new ActivityAnomaly(
-                ActivityAnomalyCode.ConflictingFinalDuration,
-                "Multiple closing traces provide different ALEN durations.",
-                true));
+            RawActivityTrace? validatedClosingTrace = traces
+                .LastOrDefault(
+                    trace => trace.TraceType
+                        == ActivityTraceTypes.ValidatedClosing);
+
+            if (validatedClosingTrace is not null)
+            {
+                return validatedClosingTrace;
+            }
+
+            RawActivityTrace? closingTrace = traces
+                .LastOrDefault(
+                    trace => trace.TraceType
+                        == ActivityTraceTypes.Closing);
+
+            return closingTrace;
         }
 
-        var tracesWithCode = orderedTraces
-            .Where(trace => !string.IsNullOrWhiteSpace(trace.RawActivityCode))
-            .ToList();
-
-        var observedCodes = tracesWithCode
-            .Select(trace => trace.RawActivityCode!.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var selectedCodeTrace = tracesWithCode
-            .LastOrDefault(trace => IsClosingTrace(trace.RawTraceType))
-            ?? tracesWithCode.LastOrDefault();
-
-        var rawActivityCode = selectedCodeTrace?.RawActivityCode?.Trim();
-        var activityKind = _codeMapper.Map(rawActivityCode);
-
-        if (observedCodes.Count > 1)
+        private static string? FindLastKnownActivityCode(IReadOnlyList<RawActivityTrace> traces)
         {
-            anomalies.Add(new ActivityAnomaly(
-                ActivityAnomalyCode.ActivityCodeChanged,
-                "The activity code has changed during the lifecycle of the same LID.",
-                false));
+            for (int index = traces.Count - 1; index >= 0; index--)
+            {
+                string? activityCode = traces[index].ActivityCode;
+
+                if (!string.IsNullOrWhiteSpace(activityCode))
+                {
+                    return activityCode.Trim();
+                }
+            }
+
+            return null;
         }
 
-        if (activityKind == ActivityKind.Unmapped)
+        private static DateTime? DetermineStartTime(RawActivityTrace? openingTrace, IEnumerable<RawActivityTrace> traces)
         {
-            anomalies.Add(new ActivityAnomaly(
-                ActivityAnomalyCode.UnmappedActivityCode,
-                $"The activity code « {rawActivityCode ?? "(empty)"} » is not yet associated with an internal type.",
-                true));
+            if (openingTrace?.ActivityStartTime is not null)
+            {
+                return openingTrace.ActivityStartTime.Value;
+            }
+
+            foreach (RawActivityTrace trace in traces)
+            {
+                if (trace.ActivityStartTime.HasValue)
+                {
+                    return trace.ActivityStartTime.Value;
+                }
+            }
+
+            return null;
         }
 
-        var externalDriverIds = orderedTraces
-            .SelectMany(trace => (trace.RawExternalDriverIds ?? string.Empty)
-                .Split(
-                    ';',
-                    StringSplitOptions.RemoveEmptyEntries
-                    | StringSplitOptions.TrimEntries))
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-
-        DateTime? calculatedEndTime = null;
-
-        if (startTime.HasValue && durationMilliseconds is >= 0)
+        private static long? DetermineDuration(RawActivityTrace? closingTrace)
         {
+            if (closingTrace is null)
+            {
+                return null;
+            }
+
+            return closingTrace.ActivityLengthMilliseconds;
+        }
+
+        private static DateTime? DetermineEndTime(DateTime? startTime, long? durationMilliseconds)
+        {
+            if (!startTime.HasValue)
+            {
+                return null;
+            }
+
+            if (!durationMilliseconds.HasValue)
+            {
+                return null;
+            }
+
+            if (durationMilliseconds.Value < 0)
+            {
+                return null;
+            }
+
             try
             {
-                var durationTicks = checked(
-                    durationMilliseconds.Value
-                    * TimeSpan.TicksPerMillisecond);
-
-                calculatedEndTime = startTime.Value.AddTicks(durationTicks);
+                return startTime.Value.AddMilliseconds(durationMilliseconds.Value);
             }
-            catch (Exception exception)
-                when (exception is OverflowException
-                    or ArgumentOutOfRangeException)
+            catch (ArgumentOutOfRangeException)
             {
-                anomalies.Add(new ActivityAnomaly(
-                    ActivityAnomalyCode.DurationOverflow,
-                    "The ALEN duration produces an impossible end date.",
-                    true));
+                return null;
             }
         }
 
-        var lifecycleState = hasClosingTrace
-            ? ActivityLifecycleState.Closed
-            : ActivityLifecycleState.OpenAtImportBoundary;
-
-        var candidateStatus = DetermineStatus(
-            activityKind,
-            lifecycleState,
-            anomalies);
-
-        return new ReconstructedActivity
+        private static IReadOnlyList<string> ExtractDriverIds(IEnumerable<RawActivityTrace> traces)
         {
-            ExternalActivityId = group.Key.ExternalActivityId,
-            RawSourceReference = group.Key.SourceReference,
-            RawActivityCode = rawActivityCode,
-            ObservedRawActivityCodes = observedCodes,
-            Kind = activityKind,
-            StartTime = startTime,
-            CalculatedEndTime = calculatedEndTime,
-            DurationMilliseconds = durationMilliseconds,
-            ExternalDriverIds = externalDriverIds,
-            LifecycleState = lifecycleState,
-            CandidateStatus = candidateStatus,
-            Anomalies = anomalies,
-            SourceTraces = orderedTraces
-        };
-    }
+            HashSet<string> knownDriverIds = new(StringComparer.OrdinalIgnoreCase);
 
-    private static ActivityCandidateStatus DetermineStatus(
-        ActivityKind kind,
-        ActivityLifecycleState lifecycleState,
-        IReadOnlyCollection<ActivityAnomaly> anomalies)
-    {
-        var structurallyInvalid = anomalies.Any(anomaly =>
-            anomaly.Code is
-                ActivityAnomalyCode.MissingStartTime
-                or ActivityAnomalyCode.MissingDuration
-                or ActivityAnomalyCode.NonPositiveDuration
-                or ActivityAnomalyCode.DurationOverflow
-                or ActivityAnomalyCode.ConflictingStartTime
-                or ActivityAnomalyCode.ConflictingFinalDuration);
+            List<string> driverIds = new();
 
-        if (structurallyInvalid)
-            return ActivityCandidateStatus.Invalid;
+            foreach (RawActivityTrace trace in traces)
+            {
+                if (string.IsNullOrWhiteSpace(trace.DriverId))
+                {
+                    continue;
+                }
 
-        if (kind == ActivityKind.Unknown)
-            return ActivityCandidateStatus.Unknown;
+                string[] traceDriverIds = trace.DriverId.Split(
+                    ';',
+                    StringSplitOptions.RemoveEmptyEntries
+                    | StringSplitOptions.TrimEntries);
 
-        if (lifecycleState == ActivityLifecycleState.OpenAtImportBoundary
-            || kind == ActivityKind.Unmapped
-            || anomalies.Count > 0)
-        {
-            return ActivityCandidateStatus.PendingReview;
+                foreach (string driverId in traceDriverIds)
+                {
+                    bool isNewDriver = knownDriverIds.Add(driverId);
+
+                    if (isNewDriver)
+                    {
+                        driverIds.Add(driverId);
+                    }
+                }
+            }
+
+            return driverIds.AsReadOnly();
         }
 
-        return ActivityCandidateStatus.Recognized;
-    }
+        private static ActivityLifecycleState DetermineLifecycleState(
+            RawActivityTrace? closingTrace)
+        {
+            if (closingTrace is null)
+            {
+                return ActivityLifecycleState.OpenAtImportBoundary;
+            }
 
-    private static bool IsClosingTrace(int traceType)
-    {
-        return traceType is 11 or 13;
-    }
+            return ActivityLifecycleState.Complete;
+        }
 
-    private readonly record struct ActivityKey(
-        string SourceReference,
-        string ExternalActivityId);
+        private static ReconstructedActivity CreateCandidate(
+            ActivityTraceGroup traceGroup,
+            IReadOnlyList<RawActivityTrace> orderedTraces,
+            string? rawActivityCode,
+            ActivityKind activityKind,
+            DateTime? startTime,
+            DateTime? endTime,
+            long? durationMilliseconds,
+            IReadOnlyList<string> driverIds,
+            ActivityLifecycleState lifecycleState)
+        {
+            return new ReconstructedActivity
+            {
+                SourceId = traceGroup.SourceId,
+                LinkId = traceGroup.LinkId,
+                RawActivityCode = rawActivityCode,
+                ActivityKind = activityKind,
+                StartTime = startTime,
+                EndTime = endTime,
+                DurationMilliseconds = durationMilliseconds,
+                DriverIds = driverIds,
+                LifecycleState = lifecycleState,
+                SourceTraces = orderedTraces
+            };
+        }
+
+        private static ActivityCandidateStatus DetermineCandidateStatus(ReconstructedActivity candidate, IEnumerable<ActivityAnomaly> anomalies)
+        {
+            if (candidate.ActivityKind == ActivityKind.Unmapped)
+            {
+                return ActivityCandidateStatus.Unmapped;
+            }
+
+            if (candidate.LifecycleState
+                == ActivityLifecycleState.OpenAtImportBoundary)
+            {
+                return ActivityCandidateStatus.RequiresReview;
+            }
+
+            bool manualReviewIsRequired = anomalies.Any(
+                anomaly => anomaly.RequiresManualReview);
+
+            if (manualReviewIsRequired)
+            {
+                return ActivityCandidateStatus.RequiresReview;
+            }
+
+            return ActivityCandidateStatus.Recognized;
+        }
+    }
 }
