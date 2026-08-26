@@ -111,16 +111,42 @@ namespace Domain.Imports
             _sourceFiles.Add(sourceFile);
         }
 
-        public void AddError(ImportError importError)
+        public void AddError(ImportError importError, ImportSourceFile? sourceFile = null)
         {
             ArgumentNullException.ThrowIfNull(importError);
 
+            bool batchIsFinished =
+                Status == ImportBatchStatus.Completed
+                || Status == ImportBatchStatus.CompletedWithErrors
+                || Status == ImportBatchStatus.Failed;
+
+            if (batchIsFinished)
+            {
+                throw new InvalidOperationException("An error cannot be added to a finished batch.");
+            }
+
+            if (sourceFile is not null && !_sourceFiles.Contains(sourceFile))
+            {
+                throw new InvalidOperationException("The source file does not belong to this batch.");
+            }
+
             if (_errors.Contains(importError))
             {
+                bool sameSourceFile = ReferenceEquals(importError.ImportSourceFile, sourceFile);
+
+                if (!sameSourceFile)
+                {
+                    throw new InvalidOperationException("The error is already attached " + "to another source file.");
+                }
+
                 return;
             }
 
+            importError.AttachTo(this, sourceFile);
+
             _errors.Add(importError);
+
+            sourceFile?.AttachError(importError);
         }
 
         public void Complete(DateTime completedAtUtc)

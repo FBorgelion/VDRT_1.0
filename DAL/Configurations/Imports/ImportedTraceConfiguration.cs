@@ -100,6 +100,11 @@ namespace DAL.Configurations.Imports
                 .WithMany(sourceFile => sourceFile.Traces)
                 .HasForeignKey(trace => trace.ImportSourceFileId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Navigation(trace => trace.Properties)
+                .HasField("_properties")
+                .UsePropertyAccessMode(PropertyAccessMode.Field);
         }
+
     }
 }

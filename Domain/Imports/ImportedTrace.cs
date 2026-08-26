@@ -1,77 +1,233 @@
-﻿namespace Domain.Imports
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Domain.Imports
 {
     public class ImportedTrace
     {
-        public int Id { get; set; }
+        private readonly List<ImportedTraceProperty> _properties = new();
 
-        public int ImportSourceFileId { get; set; }
+        private ImportedTrace()
+        {
+        }
 
-        public int Position { get; set; }
+        public ImportedTrace(ImportedTraceCreationData data)
+        {
+            ArgumentNullException.ThrowIfNull(data);
 
-        public string? TraceTypeRaw { get; set; }
+            if (data.Position <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(data.Position), "The trace position must be greater than zero.");
+            }
 
-        public int? TraceType { get; set; }
+            if (string.IsNullOrWhiteSpace(data.RawXml))
+            {
+                throw new ArgumentException("The raw XML is required.",nameof(data.RawXml));
+            }
 
-        public string? SourceRaw { get; set; }
+            Position = data.Position;
 
-        public string? TechnicalTimeRaw { get; set; }
+            TraceTypeRaw = data.TraceTypeRaw;
+            TraceType = data.TraceType;
 
-        public DateTime? TechnicalTime { get; set; }
+            SourceRaw = data.SourceRaw;
 
-        public string? LatitudeRaw { get; set; }
+            TechnicalTimeRaw = data.TechnicalTimeRaw;
+            TechnicalTime = data.TechnicalTime;
 
-        public decimal? Latitude { get; set; }
+            LatitudeRaw = data.LatitudeRaw;
+            Latitude = data.Latitude;
 
-        public string? LongitudeRaw { get; set; }
+            LongitudeRaw = data.LongitudeRaw;
+            Longitude = data.Longitude;
 
-        public decimal? Longitude { get; set; }
+            MileageRaw = data.MileageRaw;
+            Mileage = data.Mileage;
 
-        public string? MileageRaw { get; set; }
+            HeadingRaw = data.HeadingRaw;
+            Heading = data.Heading;
 
-        public long? Mileage { get; set; }
+            SpeedRaw = data.SpeedRaw;
+            Speed = data.Speed;
 
-        public string? HeadingRaw { get; set; }
+            LinkId = data.LinkId;
+            ActivityCode = data.ActivityCode;
+            DriverIdsRaw = data.DriverIdsRaw;
 
-        public decimal? Heading { get; set; }
+            SequenceRaw = data.SequenceRaw;
+            Sequence = data.Sequence;
 
-        public string? SpeedRaw { get; set; }
+            ActivityStartTimeRaw = data.ActivityStartTimeRaw;
+            ActivityStartTime = data.ActivityStartTime;
 
-        public decimal? Speed { get; set; }
+            ActivityLengthMillisecondsRaw =
+                data.ActivityLengthMillisecondsRaw;
 
-        public string? LinkId { get; set; }
+            ActivityLengthMilliseconds =
+                data.ActivityLengthMilliseconds;
 
-        public string? ActivityCode { get; set; }
+            DrivingLengthMillisecondsRaw =
+                data.DrivingLengthMillisecondsRaw;
 
-        public string? DriverIdsRaw { get; set; }
+            DrivingLengthMilliseconds =
+                data.DrivingLengthMilliseconds;
 
-        public string? SequenceRaw { get; set; }
+            DeviceRaw = data.DeviceRaw;
 
-        public long? Sequence { get; set; }
+            ActivityReportRaw = data.ActivityReportRaw;
+            ActivityFinalReportRaw = data.ActivityFinalReportRaw;
 
-        public string? ActivityStartTimeRaw { get; set; }
+            TraceHash = NormalizeAndValidateHash(data.TraceHash);
+            RawXml = data.RawXml;
+        }
 
-        public DateTime? ActivityStartTime { get; set; }
+        public int Id { get; private set; }
 
-        public string? ActivityLengthMillisecondsRaw { get; set; }
+        public int ImportSourceFileId { get; private set; }
 
-        public long? ActivityLengthMilliseconds { get; set; }
+        public int Position { get; private set; }
 
-        public string? DrivingLengthMillisecondsRaw { get; set; }
+        public string? TraceTypeRaw { get; private set; }
 
-        public long? DrivingLengthMilliseconds { get; set; }
+        public int? TraceType { get; private set; }
 
-        public string? DeviceRaw { get; set; }
+        public string? SourceRaw { get; private set; }
 
-        public string? ActivityReportRaw { get; set; }
+        public string? TechnicalTimeRaw { get; private set; }
 
-        public string? ActivityFinalReportRaw { get; set; }
+        public DateTime? TechnicalTime { get; private set; }
 
-        public string TraceHash { get; set; } = string.Empty;
+        public string? LatitudeRaw { get; private set; }
 
-        public string RawXml { get; set; } = string.Empty;
+        public decimal? Latitude { get; private set; }
 
-        public ImportSourceFile ImportSourceFile { get; set; } = null!;
+        public string? LongitudeRaw { get; private set; }
 
-        public ICollection<ImportedTraceProperty> Properties { get; set; } = new List<ImportedTraceProperty>();
+        public decimal? Longitude { get; private set; }
+
+        public string? MileageRaw { get; private set; }
+
+        public long? Mileage { get; private set; }
+
+        public string? HeadingRaw { get; private set; }
+
+        public decimal? Heading { get; private set; }
+
+        public string? SpeedRaw { get; private set; }
+
+        public decimal? Speed { get; private set; }
+
+        public string? LinkId { get; private set; }
+
+        public string? ActivityCode { get; private set; }
+
+        public string? DriverIdsRaw { get; private set; }
+
+        public string? SequenceRaw { get; private set; }
+
+        public long? Sequence { get; private set; }
+
+        public string? ActivityStartTimeRaw { get; private set; }
+
+        public DateTime? ActivityStartTime { get; private set; }
+
+        public string? ActivityLengthMillisecondsRaw
+        {
+            get;
+            private set;
+        }
+
+        public long? ActivityLengthMilliseconds
+        {
+            get;
+            private set;
+        }
+
+        public string? DrivingLengthMillisecondsRaw
+        {
+            get;
+            private set;
+        }
+
+        public long? DrivingLengthMilliseconds
+        {
+            get;
+            private set;
+        }
+
+        public string? DeviceRaw { get; private set; }
+
+        public string? ActivityReportRaw { get; private set; }
+
+        public string? ActivityFinalReportRaw { get; private set; }
+
+        public string TraceHash { get; private set; } = string.Empty;
+
+        public string RawXml { get; private set; } = string.Empty;
+
+        public ImportSourceFile ImportSourceFile
+        {
+            get;
+            private set;
+        } = null!;
+
+        public IReadOnlyCollection<ImportedTraceProperty> Properties => _properties.AsReadOnly();
+
+        public void AddProperty(int position, string? keyRaw, string? valueRaw)
+        {
+            if (ImportSourceFile is not null)
+            {
+                throw new InvalidOperationException("A property cannot be added after the trace " + "has been attached to a source file.");
+            }
+
+            int expectedPosition = _properties.Count + 1;
+
+            if (position != expectedPosition)
+            {
+                throw new ArgumentOutOfRangeException(nameof(position), $"The next property position must be " + $"{expectedPosition}.");
+            }
+
+            ImportedTraceProperty property = new(position, keyRaw, valueRaw, this);
+
+            _properties.Add(property);
+        }
+
+        internal void AttachToSourceFile(ImportSourceFile sourceFile)
+        {
+            ArgumentNullException.ThrowIfNull(sourceFile);
+
+            if (ImportSourceFile is not null && !ReferenceEquals(ImportSourceFile, sourceFile))
+            {
+                throw new InvalidOperationException("The trace is already attached " + "to another source file.");
+            }
+
+            ImportSourceFile = sourceFile;
+        }
+
+        private static string NormalizeAndValidateHash(string traceHash)
+        {
+            if (string.IsNullOrWhiteSpace(traceHash))
+            {
+                throw new ArgumentException("The trace hash is required.", nameof(traceHash));
+            }
+
+            string normalizedHash = traceHash.Trim().ToLowerInvariant();
+
+            bool containsInvalidCharacter = normalizedHash.Any
+                (character =>!IsHexadecimalCharacter(character));
+
+            if (normalizedHash.Length != 64 || containsInvalidCharacter)
+            {
+                throw new ArgumentException( "The trace hash must be a 64-character " + "SHA-256 hexadecimal value.", nameof(traceHash));
+            }
+
+            return normalizedHash;
+        }
+
+        private static bool IsHexadecimalCharacter(char character)
+        {
+            return character >= '0' && character <= '9' || character >= 'a' && character <= 'f';
+        }
     }
 }

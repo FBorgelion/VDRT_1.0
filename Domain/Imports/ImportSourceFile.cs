@@ -86,12 +86,25 @@ namespace Domain.Imports
                 throw new InvalidOperationException("This trace is already attached to the source file.");
             }
 
+            bool positionAlreadyUsed = _traces.Any(existingTrace => existingTrace.Position == importedTrace.Position);
+
+            if (positionAlreadyUsed)
+            {
+                throw new InvalidOperationException("Another trace already uses this position " + "in the source file.");
+            }
+
+            importedTrace.AttachToSourceFile(this);
             _traces.Add(importedTrace);
         }
 
-        public void AddError(ImportError importError)
+        internal void AttachError(ImportError importError)
         {
             ArgumentNullException.ThrowIfNull(importError);
+
+            if (!ReferenceEquals(importError.ImportSourceFile, this))
+            {
+                throw new InvalidOperationException("The error is not attached " + "to this source file.");
+            }
 
             if (_errors.Contains(importError))
             {
