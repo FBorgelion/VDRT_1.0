@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Domain.Imports;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -26,6 +27,16 @@ namespace DAL.Data
         public DbSet<Timesheet> Timesheets { get; set; }
         public DbSet<TripAnomaly> TripAnomalies { get; set; }
         public DbSet<VehicleAlert> VehicleAlerts { get; set; }
+
+        public DbSet<ImportBatch> ImportBatches => Set<ImportBatch>();
+
+        public DbSet<ImportSourceFile> ImportSourceFiles => Set<ImportSourceFile>();
+
+        public DbSet<ImportedTrace> ImportedTraces => Set<ImportedTrace>();
+
+        public DbSet<ImportedTraceProperty> ImportedTraceProperties => Set<ImportedTraceProperty>();
+
+        public DbSet<ImportError> ImportErrors => Set<ImportError>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -150,6 +161,9 @@ namespace DAL.Data
                 .WithMany(v => v.Positions)
                 .HasForeignKey(p => p.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.ApplyConfigurationsFromAssembly(
+                typeof(AppDbContext).Assembly);
 
         }
 
